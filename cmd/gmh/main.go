@@ -1,9 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/yangyang5214/git_commit/internal/config"
 	"github.com/yangyang5214/git_commit/internal/git"
@@ -21,11 +21,11 @@ func main() {
 
 	pConfig, err := appConf.GetCurrentProviderConfig()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "无法确定使用的 Provider: %v\n", err)
+		fmt.Fprintf(os.Stderr, ui.GetText(appConf.Language, "provider_determine_error"), err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("使用 Provider: %s (Model: %s)\n", pConfig.Name, pConfig.Model)
+	fmt.Printf(ui.GetText(appConf.Language, "using_provider"), pConfig.Name, pConfig.Model)
 
 	// 2. 初始化 Provider
 	// 目前主要是 OpenAI 兼容的，未来可以根据 pConfig.Name 做 switch
@@ -36,23 +36,28 @@ func main() {
 		// 获取 Diff
 		diff, err := git.GetDiff()
 		if err != nil {
-			fmt.Println(err)
-			if strings.Contains(err.Error(), "暂存区为空") {
+			if errors.Is(err, git.ErrStagingEmpty) {
+				fmt.Println(ui.GetText(appConf.Language, "staging_area_empty"))
 				os.Exit(0)
 			}
+			if errors.Is(err, git.ErrNotGitRepo) {
+				fmt.Println(ui.GetText(appConf.Language, "not_git_repo"))
+				os.Exit(1)
+			}
+			fmt.Println(err)
 			os.Exit(1)
 		}
 
 		// 生成 Message
-		fmt.Println("正在生成提交信息...")
+		fmt.Println(ui.GetText(appConf.Language, "generating_message"))
 		message, err := aiProvider.GenerateCommitMessage(diff)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "生成失败: %v\n", err)
+			fmt.Fprintf(os.Stderr, ui.GetText(appConf.Language, "generation_failed"), err)
 			os.Exit(1)
 		}
 
 		// 交互
-		action := ui.InteractiveLoop(message)
+		action := ui.InteractiveLoop(message, appConf.Language)
 		if action != ui.ActionRegenerate {
 			break
 		}

@@ -67,12 +67,22 @@ func (p *OpenAICompatibleProvider) GenerateCommitMessage(diff string) (string, e
 		diff = diff[:12000] + "\n...(truncated)"
 	}
 
-	systemPrompt := "你是一个专业的开发者工具。请根据以下的 git diff 内容，" +
-		"生成一个简洁、规范的 git commit message。" +
-		"格式要求：第一行是简短的摘要（50字符以内），" +
-		"如果需要，空一行后可以跟详细的描述。" +
-		"回答中只包含 commit message 本身，不要包含任何解释或其他文字。" +
-		"请使用中文回答（除非项目显然是全英文环境，但默认使用中文）。"
+	var systemPrompt string
+	if strings.HasPrefix(p.config.Language, "en") {
+		systemPrompt = "You are a professional developer tool. Based on the following git diff content, " +
+			"generate a concise and standardized git commit message. " +
+			"Format requirements: The first line should be a short summary (within 50 characters). " +
+			"If necessary, leave a blank line followed by a detailed description. " +
+			"The response should contain ONLY the commit message itself, without any explanation or other text. " +
+			"Please answer in English."
+	} else {
+		systemPrompt = "你是一个专业的开发者工具。请根据以下的 git diff 内容，" +
+			"生成一个简洁、规范的 git commit message。" +
+			"格式要求：第一行是简短的摘要（50字符以内），" +
+			"如果需要，空一行后可以跟详细的描述。" +
+			"回答中只包含 commit message 本身，不要包含任何解释或其他文字。" +
+			"请使用中文回答。"
+	}
 
 	reqBody := openAIRequest{
 		Model: p.config.Model,

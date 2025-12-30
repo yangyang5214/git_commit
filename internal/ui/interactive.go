@@ -19,14 +19,19 @@ const (
 )
 
 // InteractiveLoop 进入交互式循环
-func InteractiveLoop(initialMessage string) Action {
+func InteractiveLoop(initialMessage string, language string) Action {
 	message := initialMessage
 	scanner := bufio.NewScanner(os.Stdin)
 
-	for {
-		printMessage(message)
+	// 简单的多语言支持
+	getText := func(key string) string {
+		return GetText(language, key)
+	}
 
-		fmt.Print("选项: [y]提交 / [e]编辑 / [r]重新生成 / [q]取消: ")
+	for {
+		printMessage(message, getText("suggested_message"))
+
+		fmt.Print(getText("options"))
 		if !scanner.Scan() {
 			return ActionQuit
 		}
@@ -35,15 +40,15 @@ func InteractiveLoop(initialMessage string) Action {
 		switch choice {
 		case "y":
 			if err := git.Commit(message); err != nil {
-				fmt.Printf("提交失败: %v\n", err)
+				fmt.Printf(getText("commit_fail"), err)
 				// 失败后继续循环，允许用户重试或编辑
 			} else {
-				fmt.Println("提交成功！")
+				fmt.Println(getText("commit_success"))
 				return ActionCommit
 			}
 
 		case "e":
-			fmt.Print("请输入新的 Commit Message: ")
+			fmt.Print(getText("enter_new_message"))
 			if scanner.Scan() {
 				newMessage := strings.TrimSpace(scanner.Text())
 				if newMessage != "" {
@@ -55,21 +60,20 @@ func InteractiveLoop(initialMessage string) Action {
 			return ActionRegenerate
 
 		case "q":
-			fmt.Println("操作已取消。")
+			fmt.Println(getText("canceled"))
 			return ActionQuit
 
 		default:
-			fmt.Println("无效的选项，请重试。")
+			fmt.Println(getText("invalid_option"))
 		}
 	}
 }
 
-func printMessage(message string) {
+func printMessage(message, title string) {
 	fmt.Println("\n" + strings.Repeat("=", 40))
-	fmt.Println("建议的 Commit Message:")
+	fmt.Println(title)
 	fmt.Println(strings.Repeat("-", 20))
 	fmt.Println(message)
 	fmt.Println(strings.Repeat("-", 20))
 	fmt.Println(strings.Repeat("=", 40) + "\n")
 }
-

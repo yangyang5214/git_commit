@@ -16,6 +16,7 @@ var demoConfigContent string
 
 type AppConfig struct {
 	CurrentProvider string
+	Language        string
 	Providers       map[string]*provider.ProviderConfig
 }
 
@@ -27,6 +28,7 @@ func LoadConfig() (*AppConfig, error) {
 
 	configPath := filepath.Join(homeDir, ".git_commit")
 	appConfig := &AppConfig{
+		Language:  "zh", // 默认中文
 		Providers: make(map[string]*provider.ProviderConfig),
 	}
 
@@ -63,6 +65,11 @@ func LoadConfig() (*AppConfig, error) {
 
 		if fullKey == "current_provider" || fullKey == "provider" {
 			appConfig.CurrentProvider = value
+			continue
+		}
+
+		if fullKey == "language" || fullKey == "lang" {
+			appConfig.Language = strings.ToLower(value)
 			continue
 		}
 
@@ -126,6 +133,7 @@ func (c *AppConfig) GetCurrentProviderConfig() (*provider.ProviderConfig, error)
 			if p.APIKey == "" {
 				return nil, fmt.Errorf("Provider '%s' 缺少 api_key", c.CurrentProvider)
 			}
+			p.Language = c.Language
 			return p, nil
 		}
 		return nil, fmt.Errorf("未找到 Provider '%s' 的配置", c.CurrentProvider)
@@ -140,12 +148,14 @@ func (c *AppConfig) GetCurrentProviderConfig() (*provider.ProviderConfig, error)
 		if p.Model == "" {
 			p.Model = "gpt-3.5-turbo"
 		}
+		p.Language = c.Language
 		return p, nil
 	}
 
 	// 3. 都没有，找第一个配置了 API Key 的 Provider
 	for _, p := range c.Providers {
 		if p.APIKey != "" {
+			p.Language = c.Language
 			return p, nil
 		}
 	}
