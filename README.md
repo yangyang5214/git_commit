@@ -1,5 +1,7 @@
 # AI Git Commit (gmh)
 
+[中文](./README.md) | [English](./README_EN.md)
+
 一个使用 AI (DeepSeek, OpenAI, Gemini 等) 自动生成 Git Commit Message 的命令行工具，命令名为 `gmh`。
 
 ## 特性
@@ -85,13 +87,6 @@ ollama.base_url=http://localhost:11434/v1/chat/completions
 ollama.model=llama3
 ```
 
-### 环境变量覆盖
-
-你也可以临时通过环境变量覆盖当前使用的 Base URL (通常用于代理)：
-
-```bash
-export OPENAI_API_BASE="https://proxy.example.com/v1/chat/completions"
-```
 
 ## 使用方法
 
